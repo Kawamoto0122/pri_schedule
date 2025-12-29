@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お手伝い管理 - Reward Tracker</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="material-icons-round icon">savings</span>
+                <h1>お手伝いトラッカー</h1>
+            </div>
+            <div class="date-display" id="currentDate"></div>
+        </header>
+
+        <main class="main-grid">
+            <!-- Dashboard Section -->
+            <section class="dashboard-section glass-panel">
+                <h2><span class="material-icons-round">analytics</span> 今月の状況</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Dynamic Stats Cards will be injected here -->
+                    <div class="stat-card total">
+                        <span class="label">合計金額</span>
+                        <span class="value" id="totalAmount">¥0</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <!-- We'll visualize progress here with simple CSS bars later -->
+                    <div class="progress-list" id="progressList"></div>
+                </div>
+            </section>
+
+            <!-- Input Form Section -->
+            <section class="input-section glass-panel">
+                <h2><span class="material-icons-round">add_circle</span> 新しい記録</h2>
+                <form id="rewardForm">
+                    <div class="form-group">
+                        <label for="registrant">登録者</label>
+                        <div class="input-wrapper">
+                            <span class="material-icons-round">person</span>
+                            <input type="text" id="registrant" placeholder="例: 太郎" required list="registrantList">
+                            <datalist id="registrantList">
+                                <option value="來夏">
+                                <option value="湊斗">
+                                <option value="和奏">
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="type">種類</label>
+                        <div class="input-wrapper">
+                            <span class="material-icons-round">category</span>
+                            <input type="text" id="type" placeholder="例: お皿洗い" required list="typeList">
+                            <datalist id="typeList">
+                                <option value="お皿洗い">
+                                <option value="お風呂掃除">
+                                <option value="ゴミ出し">
+                                <option value="洗濯物たたみ">
+                                <option value="肩たたき">
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">金額 (円)</label>
+                        <div class="input-wrapper">
+                            <span class="material-icons-round">currency_yen</span>
+                            <input type="number" id="amount" placeholder="100" min="0" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <span>登録する</span>
+                        <span class="material-icons-round">arrow_forward</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- History List Section -->
+            <section class="history-section glass-panel">
+                <div class="section-header">
+                    <h2><span class="material-icons-round">history</span> 最新の履歴</h2>
+                    <button id="clearHistoryBtn" class="icon-btn" title="履歴をクリア" style="opacity: 0.5;">
+                        <span class="material-icons-round">delete_sweep</span>
+                    </button>
+                </div>
+                <div class="history-list-wrapper">
+                    <ul class="history-list" id="historyList">
+                        <!-- History items will be injected here -->
+                        <li class="empty-state">まだ記録がありません</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">登録しました</div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
