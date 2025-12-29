@@ -424,3 +424,65 @@ body {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
 }
+
+/* Mobile Optimizations */
+@media (max-width: 480px) {
+    .app-container {
+        padding: 1rem;
+    }
+
+    .app-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .app-header h1 {
+        font-size: 1.25rem;
+        /* Smaller title */
+    }
+
+    .glass-panel {
+        padding: 1.25rem;
+        border-radius: 1rem;
+        /* Slightly smaller radius */
+    }
+
+    .glass-panel h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Make stats more compact or stack better if needed */
+    .stat-card .value {
+        font-size: 1.25rem;
+    }
+
+    /* History Item Tweaks */
+    .history-item {
+        padding: 0.75rem;
+    }
+
+    .history-content h4 {
+        font-size: 0.95rem;
+    }
+
+    /* Always show delete button on mobile & improve touch target */
+    .delete-record-btn {
+        opacity: 1;
+        padding: 0.6rem;
+        /* Larger touch area */
+        background: rgba(255, 255, 255, 0.05);
+        margin-left: 0.5rem;
+    }
+
+    .delete-record-btn .material-icons-round {
+        font-size: 1.25rem;
+    }
+
+    /* Better input sizing */
+    .input-wrapper input {
+        padding: 0.9rem 1rem 0.9rem 2.8rem;
+        /* Slightly taller for touch */
+        font-size: 16px;
+        /* Prevent iOS zoom on focus */
+    }
+}
