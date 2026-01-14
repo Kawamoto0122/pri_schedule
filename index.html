@@ -68,14 +68,19 @@
                         <label for="type">種類</label>
                         <div class="input-wrapper">
                             <span class="material-icons-round">category</span>
-                            <input type="text" id="type" placeholder="例: お皿洗い" required list="typeList">
-                            <datalist id="typeList">
-                                <option value="お皿洗い">
-                                <option value="お風呂掃除">
-                                <option value="ゴミ出し">
-                                <option value="洗濯物たたみ">
-                                <option value="肩たたき">
-                            </datalist>
+                            <select id="type" required
+                                style="flex: 1; border: none; background: transparent; padding: 8px; outline: none; font-size: 1rem; color: var(--text-color);">
+                                <option value="" disabled selected>作業を選択してください</option>
+                                <option value="お風呂掃除">お風呂掃除</option>
+                                <option value="食器洗い">食器洗い</option>
+                                <option value="猫のトイレ掃除 ※1階&2階">猫のトイレ掃除 ※1階&2階</option>
+                                <option value="ゴミ捨て">ゴミ捨て</option>
+                                <option value="雑巾がけ床【1階】">雑巾がけ床【1階】</option>
+                                <option value="雑巾がけ床【2階】">雑巾がけ床【2階】</option>
+                                <option value="テスト80点以上">テスト80点以上</option>
+                                <option value="テスト90点以上">テスト90点以上</option>
+                                <option value="その他">その他</option>
+                            </select>
                         </div>
                     </div>
 

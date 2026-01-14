@@ -18,6 +18,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.getElementById('toast');
     const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
+    // Task Type Definitions
+    const TASK_TYPES = {
+        'お風呂掃除': 50,
+        '食器洗い': 20,
+        '猫のトイレ掃除 ※1階&2階': 20,
+        'ゴミ捨て': 10,
+        '雑巾がけ床【1階】': 30,
+        '雑巾がけ床【2階】': 50,
+        'テスト80点以上': 50,
+        'テスト90点以上': 100,
+        'その他': null
+    };
+
     // ----------------------------------------------------
     // Initialization
     // ----------------------------------------------------
@@ -27,11 +40,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     // Event Listeners
     // ----------------------------------------------------
+    // Auto-fill amount based on type
+    const typeSelect = document.getElementById('type');
+    const amountInput = document.getElementById('amount');
+
+    if (typeSelect && amountInput) {
+        typeSelect.addEventListener('change', (e) => {
+            const selectedType = e.target.value;
+            const price = TASK_TYPES[selectedType];
+
+            if (price !== null) {
+                amountInput.value = price;
+                amountInput.readOnly = true;
+                amountInput.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'; // Visual cue
+            } else {
+                amountInput.value = '';
+                amountInput.readOnly = false;
+                amountInput.style.backgroundColor = '';
+                amountInput.focus();
+            }
+        });
+    }
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const registrant = document.getElementById('registrant').value.trim();
-        const type = document.getElementById('type').value.trim();
+        const type = document.getElementById('type').value;
         const amount = parseInt(document.getElementById('amount').value);
 
         if (!registrant || !type || isNaN(amount)) return;
