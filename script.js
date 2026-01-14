@@ -2,8 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     // State Application
     // ----------------------------------------------------
-    const STORAGE_KEY = 'otetsudaiData';
-    let appData = loadData();
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwR729mFW8nZn91aJVfrxTWyM9aIcLdAqFYAf_PjPqpQ459O2ncAMWHK4gz_GIGM-Wv/exec';
+
+    // Local state to hold data for rendering
+    let appData = {
+        records: []
+    };
 
     // Elements
     const form = document.getElementById('rewardForm');
@@ -18,12 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialization
     // ----------------------------------------------------
     updateDate();
-    renderUI();
+    fetchData(); // Initial load
 
     // ----------------------------------------------------
     // Event Listeners
     // ----------------------------------------------------
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const registrant = document.getElementById('registrant').value.trim();
@@ -32,58 +36,104 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!registrant || !type || isNaN(amount)) return;
 
+        // Show loading state or disable button
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-icons-round">hourglass_empty</span> 送信中...';
+
         const newRecord = {
-            id: Date.now(),
+            id: Date.now().toString(),
             registrant,
             type,
             amount,
             date: new Date().toISOString()
         };
 
-        appData.records.unshift(newRecord); // Add to beginning
-        saveData();
-        renderUI();
-        form.reset();
-        showToast('登録しました！');
+        try {
+            await postData('add', newRecord);
+
+            form.reset();
+            showToast('登録しました！');
+
+            // Refresh data
+            await fetchData();
+        } catch (error) {
+            console.error('Save error:', error);
+            showToast('エラーが発生しました: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
     });
 
     clearHistoryBtn.addEventListener('click', () => {
-        if (confirm('すべての履歴を削除してもよろしいですか？')) {
-            appData.records = [];
-            saveData();
-            renderUI();
-            showToast('履歴を削除しました');
-        }
+        alert('共有データの安全のため、全履歴削除機能は無効化されています。');
     });
 
     // ----------------------------------------------------
     // Logic & Utilities
     // ----------------------------------------------------
-    function loadData() {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-            return JSON.parse(raw);
+    async function fetchData() {
+        renderLoadingState();
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+
+            appData.records = data;
+            renderUI();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            historyList.innerHTML = '<li class="empty-state" style="color:red;">データの読み込みに失敗しました。<br>再読み込みしてください。</li>';
+            showToast('読み込みエラー');
         }
-        return { records: [] };
     }
 
-    function saveData() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+    async function postData(action, data) {
+        // GAS Web App simple POST
+        const payload = JSON.stringify({
+            action: action,
+            data: data,
+            id: data?.id || data
+        });
+
+        // Use no-cors mode requires backend strictly returning text/plain or handling it?
+        // Actually, 'cors' mode is cleaner if GAS returns proper headers.
+        // Standard GAS Web App setups usually handle simple POSTs well if they return JSON and followed redirects.
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: payload
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+        const result = await response.json();
+        if (result.status === 'error') throw new Error(result.message);
+        return result;
     }
 
-    function deleteRecord(id) {
+    async function deleteRecord(id) {
         if (!confirm('この記録を削除しますか？')) return;
 
-        appData.records = appData.records.filter(r => r.id !== id);
-        saveData();
-        renderUI();
-        showToast('削除しました');
+        const item = document.querySelector(`button[data-id="${id}"]`).closest('.history-item');
+        if (item) item.style.opacity = '0.5';
+
+        try {
+            await postData('delete', id);
+            showToast('削除しました');
+            fetchData();
+        } catch (error) {
+            console.error('Delete error:', error);
+            showToast('削除に失敗しました');
+            if (item) item.style.opacity = '1';
+        }
     }
 
     function updateDate() {
         const now = new Date();
-        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' };
-        loadingDateEl.textContent = now.toLocaleDateString('ja-JP', options);
+        const options = { month: 'numeric', day: 'numeric', weekday: 'short' };
+        const dateStr = now.toLocaleDateString('ja-JP', options);
+        loadingDateEl.textContent = dateStr;
     }
 
     function formatCurrency(num) {
@@ -98,6 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     // Rendering
     // ----------------------------------------------------
+    function renderLoadingState() {
+        // Only show loading if empty? Or simple spinner overlay?
+        // Let's just show spinner in list if it's empty, otherwise maybe toast?
+        // For simplicity, just spinner in list for now.
+        if (appData.records.length === 0) {
+            historyList.innerHTML = '<li class="empty-state"><span class="material-icons-round spin">sync</span> 読み込み中...</li>';
+        }
+    }
+
     function renderUI() {
         renderHistory();
         renderDashboard();
@@ -106,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderHistory() {
         historyList.innerHTML = '';
 
-        if (appData.records.length === 0) {
+        if (!appData.records || appData.records.length === 0) {
             historyList.innerHTML = '<li class="empty-state">まだ記録がありません。お手伝いをして記録しましょう！</li>';
             return;
         }
@@ -123,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="history-amount">
                         ${formatCurrency(record.amount)}
                     </div>
-                    <button class="delete-record-btn" title="削除">
+                    <button class="delete-record-btn" title="削除" data-id="${record.id}">
                         <span class="material-icons-round">close</span>
                     </button>
                 </div>
@@ -137,34 +196,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderDashboard() {
-        // Calculate Totals
         let total = 0;
         const perUser = {};
 
-        // Filter for current month only (Enhancement: Could allow changing months later)
         const now = new Date();
+
         const currentMonthRecords = appData.records.filter(r => {
             const d = new Date(r.date);
             return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
         });
 
         currentMonthRecords.forEach(r => {
-            total += r.amount;
+            const amt = Number(r.amount);
+            total += amt;
             if (perUser[r.registrant]) {
-                perUser[r.registrant] += r.amount;
+                perUser[r.registrant] += amt;
             } else {
-                perUser[r.registrant] = r.amount;
+                perUser[r.registrant] = amt;
             }
         });
 
-        // Update Total Display
         totalAmountEl.textContent = formatCurrency(total);
 
-        // Update User Breakdown Progress Bars
         progressListEl.innerHTML = '';
-        const users = Object.keys(perUser).sort((a, b) => perUser[b] - perUser[a]); // Sort by amount desc
+        const users = Object.keys(perUser).sort((a, b) => perUser[b] - perUser[a]);
 
-        // Find max for bar scaling (avoid div by zero)
         const maxVal = users.length > 0 ? perUser[users[0]] : 1;
 
         if (users.length === 0) {
@@ -174,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         users.forEach(user => {
             const amount = perUser[user];
             const percent = (amount / maxVal) * 100;
-            const hue = stringToHue(user); // Generate consistent color based on name
+            const hue = stringToHue(user);
 
             const item = document.createElement('div');
             item.className = 'progress-item';
@@ -201,9 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
-    // Helper: Generate a consistent color hue from a string
     function stringToHue(str) {
-        // Specific color overrides for known users
         const colors = {
             '來夏': 35,  // Orange/Gold
             '湊斗': 210, // Blue

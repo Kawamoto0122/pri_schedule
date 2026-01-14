@@ -433,11 +433,33 @@ body {
 
     .app-header {
         margin-bottom: 1.5rem;
+        /* Ensure single line layout */
+        flex-wrap: nowrap;
+        gap: 0.5rem;
     }
 
     .app-header h1 {
-        font-size: 1.25rem;
-        /* Smaller title */
+        font-size: 1.1rem;
+        /* Slightly smaller to ensure fit */
+        white-space: nowrap;
+    }
+
+    .date-display {
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .logo-area {
+        gap: 0.5rem;
+        flex-shrink: 1;
+        /* Allow shrinking if absolutely needed */
+        min-width: 0;
+        /* Enable shrinking for flex children */
+    }
+
+    .logo-area .icon {
+        font-size: 1.75rem;
+        /* Smaller icon */
     }
 
     .glass-panel {
