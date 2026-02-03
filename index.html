@@ -33,7 +33,20 @@
         <main class="main-grid">
             <!-- Dashboard Section -->
             <section class="dashboard-section glass-panel">
-                <h2><span class="material-icons-round">analytics</span> 今月の状況</h2>
+                <div class="dashboard-header">
+                    <h2><span class="material-icons-round">analytics</span> <span id="dashboardTitle">今月の状況</span></h2>
+                    <div class="month-nav">
+                        <button id="prevMonthBtn" class="nav-btn" title="前の月へ">
+                            <span class="material-icons-round">chevron_left</span>
+                        </button>
+                        <button id="resetMonthBtn" class="nav-btn" title="今月へ戻る">
+                            <span class="material-icons-round">today</span>
+                        </button>
+                        <button id="nextMonthBtn" class="nav-btn" title="次の月へ">
+                            <span class="material-icons-round">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
                 <div class="stats-grid" id="statsGrid">
                     <!-- Dynamic Stats Cards will be injected here -->
                     <div class="stat-card total">
