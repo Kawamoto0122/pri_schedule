@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const progressListEl = document.getElementById('progressList');
     const toast = document.getElementById('toast');
     const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    const historyTitle = document.getElementById('historyTitle');
+
+    // Dashboard Nav Elements
 
     // Dashboard Nav Elements
     const dashboardTitle = document.getElementById('dashboardTitle');
@@ -99,6 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
             form.reset();
             showToast('登録しました！');
 
+            // Reset view to current month so user sees the new record
+            currentDashboardDate = new Date();
+
             // Refresh data
             await fetchData();
         } catch (error) {
@@ -113,29 +119,29 @@ document.addEventListener('DOMContentLoaded', () => {
     clearHistoryBtn.addEventListener('click', () => {
         alert('共有データの安全のため、全履歴削除機能は無効化されています。');
     });
+
+    // Month Navigation Listeners
+    if (prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', () => {
+            currentDashboardDate.setMonth(currentDashboardDate.getMonth() - 1);
+            renderUI();
+        });
+    }
+
+    if (nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', () => {
+            currentDashboardDate.setMonth(currentDashboardDate.getMonth() + 1);
+            renderUI();
+        });
+    }
+
+    if (resetMonthBtn) {
+        resetMonthBtn.addEventListener('click', () => {
+            currentDashboardDate = new Date();
+            renderUI();
+        });
+    }
 });
-
-// Month Navigation Listeners
-if (prevMonthBtn) {
-    prevMonthBtn.addEventListener('click', () => {
-        currentDashboardDate.setMonth(currentDashboardDate.getMonth() - 1);
-        renderDashboard();
-    });
-}
-
-if (nextMonthBtn) {
-    nextMonthBtn.addEventListener('click', () => {
-        currentDashboardDate.setMonth(currentDashboardDate.getMonth() + 1);
-        renderDashboard();
-    });
-}
-
-if (resetMonthBtn) {
-    resetMonthBtn.addEventListener('click', () => {
-        currentDashboardDate = new Date();
-        renderDashboard();
-    });
-}
 
 // ----------------------------------------------------
 // Logic & Utilities
@@ -231,12 +237,28 @@ function renderUI() {
 function renderHistory() {
     historyList.innerHTML = '';
 
-    if (!appData.records || appData.records.length === 0) {
-        historyList.innerHTML = '<li class="empty-state">まだ記録がありません。お手伝いをして記録しましょう！</li>';
+    const year = currentDashboardDate.getFullYear();
+    const month = currentDashboardDate.getMonth();
+
+    // Update Title
+    if (historyTitle) {
+        historyTitle.textContent = `${month + 1}月の履歴`;
+    }
+
+    const filteredRecords = appData.records.filter(r => {
+        const d = new Date(r.date);
+        return d.getMonth() === month && d.getFullYear() === year;
+    });
+
+    if (!filteredRecords || filteredRecords.length === 0) {
+        historyList.innerHTML = '<li class="empty-state">この月の記録はありません。</li>';
         return;
     }
 
-    appData.records.forEach(record => {
+    // Sort descending by date (newest first)
+    filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    filteredRecords.forEach(record => {
         const li = document.createElement('li');
         li.className = 'history-item';
         li.innerHTML = `
