@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dashboard State
     let currentDashboardDate = new Date();
 
+    // Chart Instance
+    let trendChart = null;
+
     // Elements
     const form = document.getElementById('rewardForm');
     const historyList = document.getElementById('historyList');
@@ -232,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderUI() {
         renderHistory();
         renderDashboard();
+        renderTrendChart();
     }
 
     function renderHistory() {
@@ -364,5 +368,111 @@ document.addEventListener('DOMContentLoaded', () => {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
         return hash % 360;
+    }
+
+    // ----------------------------------------------------
+    // Chart Logic
+    // ----------------------------------------------------
+    function renderTrendChart() {
+        const ctx = document.getElementById('trendChart');
+        if (!ctx) return;
+
+        // Group data by Month (e.g. "2024-10")
+        const monthlyTotals = {};
+
+        // Helper to sort "YYYY-MM" strings
+        const sortedKeys = [];
+
+        // 1. Organize data
+        appData.records.forEach(r => {
+            const d = new Date(r.date);
+            const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+            if (!monthlyTotals[key]) monthlyTotals[key] = 0;
+            monthlyTotals[key] += Number(r.amount);
+        });
+
+        // 2. Sort keys (last 12 months?) - Actually just sort all available keys for now
+        Object.keys(monthlyTotals).sort().forEach(key => {
+            sortedKeys.push(key);
+        });
+
+        // Limit to last 6 months for better visibility on mobile?
+        // Let's show up to 12 months.
+        const recentKeys = sortedKeys.slice(-12);
+
+        const labels = recentKeys.map(key => {
+            const [y, m] = key.split('-');
+            return `${y}年${m}月`;
+        });
+
+        const data = recentKeys.map(key => monthlyTotals[key]);
+
+        // 3. Render Chart
+        if (trendChart) {
+            trendChart.data.labels = labels;
+            trendChart.data.datasets[0].data = data;
+            trendChart.update();
+        } else {
+            trendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '合計金額',
+                        data: data,
+                        backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        hoverBackgroundColor: 'rgba(255, 255, 255, 0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                callback: function (value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }
 });

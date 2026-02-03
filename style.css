@@ -557,3 +557,37 @@ body {
 .nav-btn .material-icons-round {
     font-size: 1.25rem;
 }
+
+/* Trend Chart */
+.trend-section {
+    grid-column: 1 / -1;
+    /* Span full width on mobile/desktop appropriately */
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .dashboard-section {
+        grid-column: span 6;
+    }
+
+    .input-section {
+        grid-column: span 6;
+    }
+
+    .trend-section {
+        grid-column: span 12;
+        /* Full width below dashboard/input */
+        order: 3;
+        /* Ensure it comes after */
+    }
+
+    .history-section {
+        grid-column: span 12;
+        order: 4;
+    }
+}
