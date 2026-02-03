@@ -141,127 +141,127 @@ document.addEventListener('DOMContentLoaded', () => {
             renderUI();
         });
     }
-});
 
-// ----------------------------------------------------
-// Logic & Utilities
-// ----------------------------------------------------
-async function fetchData() {
-    renderLoadingState();
-    try {
-        const response = await fetch(API_URL);
+
+    // ----------------------------------------------------
+    // Logic & Utilities
+    // ----------------------------------------------------
+    async function fetchData() {
+        renderLoadingState();
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+
+            appData.records = data;
+            renderUI();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            historyList.innerHTML = '<li class="empty-state" style="color:red;">データの読み込みに失敗しました。<br>再読み込みしてください。</li>';
+            showToast('読み込みエラー');
+        }
+    }
+
+    async function postData(action, data) {
+        // GAS Web App simple POST
+        const payload = JSON.stringify({
+            action: action,
+            data: data,
+            id: data?.id || data
+        });
+
+        // Use no-cors mode requires backend strictly returning text/plain or handling it?
+        // Actually, 'cors' mode is cleaner if GAS returns proper headers.
+        // Standard GAS Web App setups usually handle simple POSTs well if they return JSON and followed redirects.
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: payload
+        });
+
         if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-
-        appData.records = data;
-        renderUI();
-    } catch (error) {
-        console.error('Fetch error:', error);
-        historyList.innerHTML = '<li class="empty-state" style="color:red;">データの読み込みに失敗しました。<br>再読み込みしてください。</li>';
-        showToast('読み込みエラー');
-    }
-}
-
-async function postData(action, data) {
-    // GAS Web App simple POST
-    const payload = JSON.stringify({
-        action: action,
-        data: data,
-        id: data?.id || data
-    });
-
-    // Use no-cors mode requires backend strictly returning text/plain or handling it?
-    // Actually, 'cors' mode is cleaner if GAS returns proper headers.
-    // Standard GAS Web App setups usually handle simple POSTs well if they return JSON and followed redirects.
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        body: payload
-    });
-
-    if (!response.ok) throw new Error('Network response was not ok');
-    const result = await response.json();
-    if (result.status === 'error') throw new Error(result.message);
-    return result;
-}
-
-async function deleteRecord(id) {
-    if (!confirm('この記録を削除しますか？')) return;
-
-    const item = document.querySelector(`button[data-id="${id}"]`).closest('.history-item');
-    if (item) item.style.opacity = '0.5';
-
-    try {
-        await postData('delete', id);
-        showToast('削除しました');
-        fetchData();
-    } catch (error) {
-        console.error('Delete error:', error);
-        showToast('削除に失敗しました');
-        if (item) item.style.opacity = '1';
-    }
-}
-
-function updateDate() {
-    const now = new Date();
-    const options = { month: 'numeric', day: 'numeric', weekday: 'short' };
-    const dateStr = now.toLocaleDateString('ja-JP', options);
-    loadingDateEl.textContent = dateStr;
-}
-
-function formatCurrency(num) {
-    return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(num);
-}
-
-function formatDate(isoString) {
-    const date = new Date(isoString);
-    return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-}
-
-// ----------------------------------------------------
-// Rendering
-// ----------------------------------------------------
-function renderLoadingState() {
-    // Only show loading if empty? Or simple spinner overlay?
-    // Let's just show spinner in list if it's empty, otherwise maybe toast?
-    // For simplicity, just spinner in list for now.
-    if (appData.records.length === 0) {
-        historyList.innerHTML = '<li class="empty-state"><span class="material-icons-round spin">sync</span> 読み込み中...</li>';
-    }
-}
-
-function renderUI() {
-    renderHistory();
-    renderDashboard();
-}
-
-function renderHistory() {
-    historyList.innerHTML = '';
-
-    const year = currentDashboardDate.getFullYear();
-    const month = currentDashboardDate.getMonth();
-
-    // Update Title
-    if (historyTitle) {
-        historyTitle.textContent = `${month + 1}月の履歴`;
+        const result = await response.json();
+        if (result.status === 'error') throw new Error(result.message);
+        return result;
     }
 
-    const filteredRecords = appData.records.filter(r => {
-        const d = new Date(r.date);
-        return d.getMonth() === month && d.getFullYear() === year;
-    });
+    async function deleteRecord(id) {
+        if (!confirm('この記録を削除しますか？')) return;
 
-    if (!filteredRecords || filteredRecords.length === 0) {
-        historyList.innerHTML = '<li class="empty-state">この月の記録はありません。</li>';
-        return;
+        const item = document.querySelector(`button[data-id="${id}"]`).closest('.history-item');
+        if (item) item.style.opacity = '0.5';
+
+        try {
+            await postData('delete', id);
+            showToast('削除しました');
+            fetchData();
+        } catch (error) {
+            console.error('Delete error:', error);
+            showToast('削除に失敗しました');
+            if (item) item.style.opacity = '1';
+        }
     }
 
-    // Sort descending by date (newest first)
-    filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+    function updateDate() {
+        const now = new Date();
+        const options = { month: 'numeric', day: 'numeric', weekday: 'short' };
+        const dateStr = now.toLocaleDateString('ja-JP', options);
+        loadingDateEl.textContent = dateStr;
+    }
 
-    filteredRecords.forEach(record => {
-        const li = document.createElement('li');
-        li.className = 'history-item';
-        li.innerHTML = `
+    function formatCurrency(num) {
+        return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(num);
+    }
+
+    function formatDate(isoString) {
+        const date = new Date(isoString);
+        return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    // ----------------------------------------------------
+    // Rendering
+    // ----------------------------------------------------
+    function renderLoadingState() {
+        // Only show loading if empty? Or simple spinner overlay?
+        // Let's just show spinner in list if it's empty, otherwise maybe toast?
+        // For simplicity, just spinner in list for now.
+        if (appData.records.length === 0) {
+            historyList.innerHTML = '<li class="empty-state"><span class="material-icons-round spin">sync</span> 読み込み中...</li>';
+        }
+    }
+
+    function renderUI() {
+        renderHistory();
+        renderDashboard();
+    }
+
+    function renderHistory() {
+        historyList.innerHTML = '';
+
+        const year = currentDashboardDate.getFullYear();
+        const month = currentDashboardDate.getMonth();
+
+        // Update Title
+        if (historyTitle) {
+            historyTitle.textContent = `${month + 1}月の履歴`;
+        }
+
+        const filteredRecords = appData.records.filter(r => {
+            const d = new Date(r.date);
+            return d.getMonth() === month && d.getFullYear() === year;
+        });
+
+        if (!filteredRecords || filteredRecords.length === 0) {
+            historyList.innerHTML = '<li class="empty-state">この月の記録はありません。</li>';
+            return;
+        }
+
+        // Sort descending by date (newest first)
+        filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        filteredRecords.forEach(record => {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.innerHTML = `
                 <div class="history-content">
                     <h4>${record.registrant} <small style="color:var(--text-muted); font-weight:normal;">- ${record.type}</small></h4>
                     <p>${formatDate(record.date)}</p>
@@ -276,59 +276,59 @@ function renderHistory() {
                 </div>
             `;
 
-        const deleteBtn = li.querySelector('.delete-record-btn');
-        deleteBtn.addEventListener('click', () => deleteRecord(record.id));
+            const deleteBtn = li.querySelector('.delete-record-btn');
+            deleteBtn.addEventListener('click', () => deleteRecord(record.id));
 
-        historyList.appendChild(li);
-    });
-}
-
-function renderDashboard() {
-    let total = 0;
-    const perUser = {};
-
-    // Use the currentDashboardDate state
-    const year = currentDashboardDate.getFullYear();
-    const month = currentDashboardDate.getMonth();
-
-    // Update Title
-    // e.g. "2024年 10月"
-    dashboardTitle.textContent = `${year}年 ${month + 1}月 の状況`;
-
-    const currentMonthRecords = appData.records.filter(r => {
-        const d = new Date(r.date);
-        return d.getMonth() === month && d.getFullYear() === year;
-    });
-
-    currentMonthRecords.forEach(r => {
-        const amt = Number(r.amount);
-        total += amt;
-        if (perUser[r.registrant]) {
-            perUser[r.registrant] += amt;
-        } else {
-            perUser[r.registrant] = amt;
-        }
-    });
-
-    totalAmountEl.textContent = formatCurrency(total);
-
-    progressListEl.innerHTML = '';
-    const users = Object.keys(perUser).sort((a, b) => perUser[b] - perUser[a]);
-
-    const maxVal = users.length > 0 ? perUser[users[0]] : 1;
-
-    if (users.length === 0) {
-        progressListEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem;">今月のデータはありません</div>';
+            historyList.appendChild(li);
+        });
     }
 
-    users.forEach(user => {
-        const amount = perUser[user];
-        const percent = (amount / maxVal) * 100;
-        const hue = stringToHue(user);
+    function renderDashboard() {
+        let total = 0;
+        const perUser = {};
 
-        const item = document.createElement('div');
-        item.className = 'progress-item';
-        item.innerHTML = `
+        // Use the currentDashboardDate state
+        const year = currentDashboardDate.getFullYear();
+        const month = currentDashboardDate.getMonth();
+
+        // Update Title
+        // e.g. "2024年 10月"
+        dashboardTitle.textContent = `${year}年 ${month + 1}月 の状況`;
+
+        const currentMonthRecords = appData.records.filter(r => {
+            const d = new Date(r.date);
+            return d.getMonth() === month && d.getFullYear() === year;
+        });
+
+        currentMonthRecords.forEach(r => {
+            const amt = Number(r.amount);
+            total += amt;
+            if (perUser[r.registrant]) {
+                perUser[r.registrant] += amt;
+            } else {
+                perUser[r.registrant] = amt;
+            }
+        });
+
+        totalAmountEl.textContent = formatCurrency(total);
+
+        progressListEl.innerHTML = '';
+        const users = Object.keys(perUser).sort((a, b) => perUser[b] - perUser[a]);
+
+        const maxVal = users.length > 0 ? perUser[users[0]] : 1;
+
+        if (users.length === 0) {
+            progressListEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem;">今月のデータはありません</div>';
+        }
+
+        users.forEach(user => {
+            const amount = perUser[user];
+            const percent = (amount / maxVal) * 100;
+            const hue = stringToHue(user);
+
+            const item = document.createElement('div');
+            item.className = 'progress-item';
+            item.innerHTML = `
                 <div class="progress-info">
                     <div class="progress-header">
                         <span>${user}</span>
@@ -339,30 +339,30 @@ function renderDashboard() {
                     </div>
                 </div>
             `;
-        progressListEl.appendChild(item);
-    });
-}
-
-function showToast(msg) {
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
-}
-
-function stringToHue(str) {
-    const colors = {
-        '來夏': 35,  // Orange/Gold
-        '湊斗': 210, // Blue
-        '和奏': 320  // Pink/Magenta
-    };
-    if (colors[str]) return colors[str];
-
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            progressListEl.appendChild(item);
+        });
     }
-    return hash % 360;
-}
+
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    function stringToHue(str) {
+        const colors = {
+            '來夏': 35,  // Orange/Gold
+            '湊斗': 210, // Blue
+            '和奏': 320  // Pink/Magenta
+        };
+        if (colors[str]) return colors[str];
+
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return hash % 360;
+    }
 });
